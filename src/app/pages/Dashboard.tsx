@@ -9,11 +9,15 @@ export function Dashboard() {
   const [filtroAtivo, setFiltroAtivo] = useState<"todos" | "confirmado" | "cancelado" | "pendente">("todos");
 
   const hoje = new Date(); 
+  
+  // URL DA API (Variável de Ambiente)
+  const API_URL = import.meta.env.VITE_API_URL;
 
   async function carregarDados() {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost:3001/agendamentos");
+      // CORREÇÃO AQUI: Usando a variável de ambiente
+      const response = await fetch(`${API_URL}/agendamentos`);
       const data = await response.json();
       
       if (Array.isArray(data)) {

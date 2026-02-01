@@ -15,7 +15,6 @@ export function Servicos() {
   const [editingServico, setEditingServico] = useState<Servico | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // ESTADO DE LOAD DO BOTÃO
   const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -25,9 +24,12 @@ export function Servicos() {
     descricao: "",
   });
 
+  // URL da API (Local ou Produção)
+  const API_URL = import.meta.env.VITE_API_URL;
+
   async function carregarServicos() {
     try {
-      const response = await fetch("http://localhost:3001/servicos");
+      const response = await fetch(`${API_URL}/servicos`);
       if (!response.ok) throw new Error("Erro no servidor");
       const data = await response.json();
       if (Array.isArray(data)) setServicos(data);
@@ -62,7 +64,7 @@ export function Servicos() {
   const handleExcluirServico = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
     try {
-      const response = await fetch(`http://localhost:3001/servicos/${id}`, {
+      const response = await fetch(`${API_URL}/servicos/${id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -75,12 +77,11 @@ export function Servicos() {
     }
   };
 
-  // --- SALVAR COM FEEDBACK DE LOAD E CORREÇÃO DE TIPO ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nome || !formData.duracao || !formData.preco) return;
 
-    setIsSaving(true); // Ativa Load
+    setIsSaving(true);
 
     const payload = {
       nome: formData.nome,
@@ -90,11 +91,11 @@ export function Servicos() {
     };
 
     try {
-      let url = "http://localhost:3001/servicos";
+      let url = `${API_URL}/servicos`;
       let method = "POST";
 
       if (editingServico) {
-        url = `http://localhost:3001/servicos/${editingServico.id}`;
+        url = `${API_URL}/servicos/${editingServico.id}`;
         method = "PUT";
       }
 
@@ -106,14 +107,9 @@ export function Servicos() {
 
       if (response.ok) {
         const servicoSalvo = await response.json();
-
-        // --- CORREÇÃO IMPORTANTE ---
-        // Garante que são números antes de salvar no estado
         servicoSalvo.preco = Number(servicoSalvo.preco);
         servicoSalvo.duracao = Number(servicoSalvo.duracao);
-        // ---------------------------
 
-        // ATUALIZAÇÃO LOCAL IMEDIATA
         if (editingServico) {
           setServicos((prev) => prev.map(s => s.id === servicoSalvo.id ? servicoSalvo : s));
         } else {
@@ -127,7 +123,7 @@ export function Servicos() {
     } catch (error) {
       console.error("Erro ao salvar:", error);
     } finally {
-      setIsSaving(false); // Desativa Load
+      setIsSaving(false);
     }
   };
 
@@ -188,7 +184,6 @@ export function Servicos() {
               </div>
             ))}
           </div>
-
           {servicos.length === 0 && (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center border border-purple-100 mt-6">
               <p className="text-gray-500">Nenhum serviço cadastrado. Clique em "Novo Serviço" para começar.</p>

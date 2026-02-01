@@ -11,29 +11,31 @@ export function Agendamentos() {
   // Dados do Sistema
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [listaServicos, setListaServicos] = useState<any[]>([]);
-  const [listaClientes, setListaClientes] = useState<any[]>([]); // <--- NOVA LISTA
+  const [listaClientes, setListaClientes] = useState<any[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    clienteId: "",    // <--- Guardamos o ID
-    clienteNome: "",  // <--- E o nome (para exibição rápida)
+    clienteId: "",
+    clienteNome: "",
     servicosSelecionados: [] as string[], 
     hora: "",
     observacoes: "",
   });
 
-  // --- CARREGAMENTO OTIMIZADO (3 EM 1) ---
+  // URL DA API
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  // --- CARREGAMENTO OTIMIZADO ---
   async function carregarDados() {
     setIsLoading(true);
     try {
-      // Agora buscamos Clientes também!
       const [resAgendamentos, resServicos, resClientes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/agendamentos`),
-        fetch(`${import.meta.env.VITE_API_URL}/servicos`),
-        fetch(`${import.meta.env.VITE_API_URL}/clientes`)
+        fetch(`${API_URL}/agendamentos`),
+        fetch(`${API_URL}/servicos`),
+        fetch(`${API_URL}/clientes`)
       ]);
 
       const dadosAgendamentos = await resAgendamentos.json();
@@ -77,9 +79,6 @@ export function Agendamentos() {
 
   const handleEditarAgendamento = (agendamento: any) => {
     setEditingId(agendamento.id);
-    
-    // Tenta achar o cliente na lista pelo nome ou ID se tiver
-    // Se o backend antigo não tinha clienteId, ele vai ficar vazio no select, mas o nome preserva
     setFormData({
         clienteId: agendamento.clienteId || "",
         clienteNome: agendamento.clienteNome,
@@ -123,14 +122,13 @@ export function Agendamentos() {
   // --- SUBMIT ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validação: precisa ter cliente selecionado
     if (!selectedDate || !formData.clienteNome || formData.servicosSelecionados.length === 0 || !formData.hora) return;
 
     setIsSaving(true);
     try {
       const payload = {
-        clienteId: formData.clienteId,     // Manda o ID
-        clienteNome: formData.clienteNome, // Manda o Nome (fallback)
+        clienteId: formData.clienteId,
+        clienteNome: formData.clienteNome,
         servicosIds: formData.servicosSelecionados,
         data: format(selectedDate, "yyyy-MM-dd"),
         hora: formData.hora,
@@ -138,8 +136,8 @@ export function Agendamentos() {
       };
 
       const url = editingId 
-        ? `http://localhost:3001/agendamentos/${editingId}`
-        : "http://localhost:3001/agendamentos";
+        ? `${API_URL}/agendamentos/${editingId}`
+        : `${API_URL}/agendamentos`;
       
       const method = editingId ? "PUT" : "POST";
 
@@ -168,7 +166,7 @@ export function Agendamentos() {
   // --- STATUS ---
   const atualizarStatus = async (id: string, novoStatus: string, urlSuffix: string) => {
     setAgendamentos(prev => prev.map(a => a.id === id ? {...a, status: novoStatus} : a));
-    try { await fetch(`http://localhost:3001/agendamentos/${id}/${urlSuffix}`, { method: "PUT" }); } 
+    try { await fetch(`${API_URL}/agendamentos/${id}/${urlSuffix}`, { method: "PUT" }); } 
     catch (error) { console.error(error); }
   };
 
@@ -273,7 +271,7 @@ export function Agendamentos() {
         </div>
       </div>
 
-      {/* MODAL (COM SELECT DE CLIENTES) */}
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowModal(false)} />
@@ -291,15 +289,9 @@ export function Agendamentos() {
                    <div><label className="block text-sm font-semibold mb-1">Horário *</label><input type="time" required value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-3 border rounded-xl" /></div>
                </div>
 
-               {/* AQUI ESTÁ A MUDANÇA: SELECT DE CLIENTES */}
                <div>
                  <label className="block text-sm font-semibold mb-1">Cliente *</label>
-                 <select 
-                    required 
-                    value={formData.clienteId} 
-                    onChange={handleClienteChange}
-                    className="w-full p-3 border rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                 >
+                 <select required value={formData.clienteId} onChange={handleClienteChange} className="w-full p-3 border rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
                     <option value="">Selecione um cliente...</option>
                     {listaClientes.map(cliente => (
                         <option key={cliente.id} value={cliente.id}>
@@ -318,8 +310,7 @@ export function Agendamentos() {
                        {listaServicos.map(servico => {
                            const isSelected = formData.servicosSelecionados.includes(servico.id);
                            return (
-                               <div key={servico.id} onClick={() => toggleServico(servico.id)} 
-                                    className={`p-3 rounded-lg cursor-pointer border flex justify-between items-center transition-all ${isSelected ? "bg-purple-100 border-purple-500" : "bg-white border-gray-200 hover:border-purple-300"}`}>
+                               <div key={servico.id} onClick={() => toggleServico(servico.id)} className={`p-3 rounded-lg cursor-pointer border flex justify-between items-center transition-all ${isSelected ? "bg-purple-100 border-purple-500" : "bg-white border-gray-200 hover:border-purple-300"}`}>
                                    <div><p className={`font-bold text-sm ${isSelected ? "text-purple-700" : "text-gray-700"}`}>{servico.nome}</p><p className="text-xs text-gray-500">R$ {servico.preco.toFixed(2)} • {servico.duracao} min</p></div>
                                    {isSelected && <Check className="w-4 h-4 text-purple-600" />}
                                </div>
