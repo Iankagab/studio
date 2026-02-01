@@ -1,12 +1,22 @@
 import express from "express";
-import cors from "cors";
+import cors from "cors"; // Certifique-se de ter instalado: npm i cors
 import { PrismaClient } from "@prisma/client";
 
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(express.json());
+// Use a porta do sistema OU a 3001
+const PORT = process.env.PORT || 3001;
+
+// Libera acesso para qualquer site (por enquanto, para facilitar)
 app.use(cors());
+app.use(express.json());
+
+// ... SUAS ROTAS AQUI ...
+
+app.listen(PORT, () => {
+  console.log(`🔥 Server running on port ${PORT}`);
+});
 
 // --- ROTAS DE SERVIÇOS ---
 

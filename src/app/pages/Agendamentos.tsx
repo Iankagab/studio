@@ -31,9 +31,9 @@ export function Agendamentos() {
     try {
       // Agora buscamos Clientes também!
       const [resAgendamentos, resServicos, resClientes] = await Promise.all([
-        fetch("http://localhost:3001/agendamentos"),
-        fetch("http://localhost:3001/servicos"),
-        fetch("http://localhost:3001/clientes")
+        fetch(`${import.meta.env.VITE_API_URL}/agendamentos`),
+        fetch(`${import.meta.env.VITE_API_URL}/servicos`),
+        fetch(`${import.meta.env.VITE_API_URL}/clientes`)
       ]);
 
       const dadosAgendamentos = await resAgendamentos.json();
