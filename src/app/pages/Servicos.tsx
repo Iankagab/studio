@@ -34,11 +34,12 @@ export function Servicos() {
       const data = await response.json();
       if (Array.isArray(data)) setServicos(data);
     } catch (error) {
-      console.error("Erro ao buscar serviços:", error);
-    } finally {
-      setIsLoading(false);
-    }
+        console.error("Erro ao buscar serviços:", error);
+  // Alerte o usuário que o problema é de conexão, não falta de dados
+        alert("O servidor está demorando a responder. Tente atualizar a página.");
+    } 
   }
+  
 
   useEffect(() => {
     carregarServicos();
