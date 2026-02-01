@@ -23,7 +23,7 @@ export function Clientes() {
   });
 
   // URL DA API
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = "https://studio-745a.onrender.com";
 
   async function carregarClientes() {
     try {
