@@ -27,20 +27,19 @@ export function Servicos() {
   // URL da API (Local ou Produção)
   const API_URL = "https://studio-745a.onrender.com";
 
-  async function carregarServicos() {
-    try {
-      const response = await fetch(`${API_URL}/servicos`);
-      if (!response.ok) throw new Error("Erro no servidor");
-      const data = await response.json();
-      if (Array.isArray(data)) setServicos(data);
-    } catch (error) {
-        console.error("Erro ao buscar serviços:", error);
-  // Alerte o usuário que o problema é de conexão, não falta de dados
-        alert("O servidor está demorando a responder. Tente atualizar a página.");
-    } 
+async function carregarServicos() {
+  try {
+    const response = await fetch(`${API_URL}/servicos`);
+    if (!response.ok) throw new Error("Erro no servidor");
+    const data = await response.json();
+    if (Array.isArray(data)) setServicos(data);
+  } catch (error) {
+    console.error("Erro ao buscar serviços:", error);
+    alert("O servidor está demorando a responder. Tente atualizar a página.");
+  } finally {
+    setIsLoading(false);
   }
-  
-
+}
   useEffect(() => {
     carregarServicos();
   }, []);
