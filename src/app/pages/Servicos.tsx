@@ -31,8 +31,11 @@ async function carregarServicos() {
   try {
     const response = await fetch(`${API_URL}/servicos`);
     if (!response.ok) throw new Error("Erro no servidor");
+
     const data = await response.json();
-    if (Array.isArray(data)) setServicos(data);
+    if (Array.isArray(data)) {
+      setServicos(data);
+    }
   } catch (error) {
     console.error("Erro ao buscar serviços:", error);
     alert("O servidor está demorando a responder. Tente atualizar a página.");
@@ -40,6 +43,7 @@ async function carregarServicos() {
     setIsLoading(false);
   }
 }
+
   useEffect(() => {
     carregarServicos();
   }, []);
