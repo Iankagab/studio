@@ -28,18 +28,27 @@ export function Servicos() {
   const API_URL = "https://studio-745a.onrender.com";
 
 async function carregarServicos() {
+  setIsLoading(true);
+
   try {
-    const response = await fetch(`${API_URL}/servicos`);
+    const response = await fetch(`${API_URL}/servicos`, {
+      cache: "no-store",
+    });
+
     if (!response.ok) throw new Error("Erro no servidor");
 
     const data = await response.json();
+
     if (Array.isArray(data)) {
       setServicos(data);
+    } else {
+      setServicos([]);
     }
   } catch (error) {
     console.error("Erro ao buscar serviços:", error);
-    alert("O servidor está demorando a responder. Tente atualizar a página.");
+    setServicos([]);
   } finally {
+    console.log("loading encerrade");
     setIsLoading(false);
   }
 }
