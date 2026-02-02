@@ -28,23 +28,13 @@ export function Servicos() {
   const API_URL = "https://studio-745a.onrender.com";
 
   async function carregarServicos() {
-    setIsLoading(true);
-
     try {
-      const response = await fetch(`${API_URL}/servicos`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
+      const response = await fetch(`${API_URL}/servicos`);
 
-      if (!response.ok) {
-        throw new Error("Erro ao buscar serviços");
+      if (response.ok) {
+        const data = await response.json();
+        setServicos(Array.isArray(data) ? data : []);
       }
-
-      const data: Servico[] = await response.json();
-      setServicos(data ?? []);
     } catch (error) {
       console.error("Erro ao buscar serviços:", error);
       setServicos([]);
@@ -78,15 +68,8 @@ export function Servicos() {
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
 
     try {
-      const response = await fetch(`${API_URL}/servicos/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setServicos(prev => prev.filter(s => s.id !== id));
-      } else {
-        alert("Não é possível excluir um serviço que já possui agendamentos.");
-      }
+      await fetch(`${API_URL}/servicos/${id}`, { method: "DELETE" });
+      setServicos(prev => prev.filter(s => s.id !== id));
     } catch (error) {
       console.error("Erro ao excluir:", error);
     }
@@ -94,50 +77,43 @@ export function Servicos() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome || !formData.duracao || !formData.preco) return;
+    if (!formData.nome || !formData.preco || !formData.duracao) return;
 
     setIsSaving(true);
 
-    const payload = {
-      nome: formData.nome,
-      duracao: Number(formData.duracao),
-      preco: Number(formData.preco),
-      descricao: formData.descricao,
-    };
-
     try {
-      let url = `${API_URL}/servicos`;
-      let method = "POST";
+      const url = editingServico
+        ? `${API_URL}/servicos/${editingServico.id}`
+        : `${API_URL}/servicos`;
 
-      if (editingServico) {
-        url = `${API_URL}/servicos/${editingServico.id}`;
-        method = "PUT";
-      }
+      const method = editingServico ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          nome: formData.nome,
+          preco: Number(formData.preco),
+          duracao: Number(formData.duracao),
+          descricao: formData.descricao,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao salvar serviço");
+      if (response.ok) {
+        const salvo = await response.json();
+
+        if (editingServico) {
+          setServicos(prev =>
+            prev.map(s => (s.id === salvo.id ? salvo : s))
+          );
+        } else {
+          setServicos(prev => [...prev, salvo]);
+        }
+
+        setShowModal(false);
       }
-
-      const servicoSalvo: Servico = await response.json();
-
-      if (editingServico) {
-        setServicos(prev =>
-          prev.map(s => (s.id === servicoSalvo.id ? servicoSalvo : s))
-        );
-      } else {
-        setServicos(prev => [...prev, servicoSalvo]);
-      }
-
-      setShowModal(false);
     } catch (error) {
       console.error("Erro ao salvar:", error);
-      alert("Erro ao salvar serviço.");
     } finally {
       setIsSaving(false);
     }
@@ -148,7 +124,7 @@ export function Servicos() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold">Serviços</h1>
-          <p className="text-gray-600 mt-2">Gerencie os serviços oferecidos</p>
+          <p className="text-gray-600 mt-2">Gerencie os serviços</p>
         </div>
 
         <button
@@ -160,115 +136,40 @@ export function Servicos() {
         </button>
       </div>
 
-      {isLoading === true ? (
-        <div className="flex justify-center items-center h-64">
-          <p className="text-gray-500 animate-pulse">
-            Carregando serviços...
-          </p>
-        </div>
+      {isLoading ? (
+        <p className="text-center text-gray-500 animate-pulse mt-10">
+          Carregando serviços...
+        </p>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {servicos.map(servico => (
-              <div
-                key={servico.id}
-                className="bg-white rounded-xl shadow p-6"
-              >
-                <div className="flex justify-between mb-4">
-                  <h3 className="font-bold text-lg">{servico.nome}</h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleEditarServico(servico)}>
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleExcluirServico(servico.id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {servicos.map(servico => (
+            <div key={servico.id} className="bg-white rounded-xl shadow p-6">
+              <div className="flex justify-between mb-3">
+                <h3 className="font-bold text-lg">{servico.nome}</h3>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEditarServico(servico)}>
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleExcluirServico(servico.id)}>
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
                 </div>
-
-                <p className="text-sm text-gray-600 mb-2">
-                  {servico.descricao}
-                </p>
-
-                <p className="text-sm">
-                  ⏱ {servico.duracao} minutos
-                </p>
-                <p className="text-sm font-semibold">
-                  💰 R$ {servico.preco.toFixed(2)}
-                </p>
               </div>
-            ))}
-          </div>
+
+              <p className="text-sm text-gray-600">
+                ⏱ {servico.duracao} minutos
+              </p>
+              <p className="text-sm font-semibold">
+                💰 R$ {servico.preco.toFixed(2)}
+              </p>
+            </div>
+          ))}
 
           {servicos.length === 0 && (
-            <p className="text-center text-gray-500 mt-8">
-              Nenhum serviço cadastrade
+            <p className="text-gray-500 col-span-full text-center py-10">
+              Nenhum serviço encontrade.
             </p>
           )}
-        </>
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                placeholder="Nome"
-                value={formData.nome}
-                onChange={e =>
-                  setFormData({ ...formData, nome: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              />
-
-              <input
-                placeholder="Duração"
-                type="number"
-                value={formData.duracao}
-                onChange={e =>
-                  setFormData({ ...formData, duracao: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              />
-
-              <input
-                placeholder="Preço"
-                type="number"
-                value={formData.preco}
-                onChange={e =>
-                  setFormData({ ...formData, preco: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              />
-
-              <textarea
-                placeholder="Descrição"
-                value={formData.descricao}
-                onChange={e =>
-                  setFormData({ ...formData, descricao: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              />
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 border rounded p-2"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex-1 bg-purple-600 text-white rounded p-2"
-                >
-                  {isSaving ? "Salvando..." : "Salvar"}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>
