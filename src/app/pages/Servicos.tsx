@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Clock, DollarSign } from "lucide-react";
 
@@ -10,11 +12,10 @@ type Servico = {
 };
 
 export function Servicos() {
-  // ⬇️ estado começa como null (indeterminado)
-  const [servicos, setServicos] = useState<Servico[] | null>(null);
-
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingServico, setEditingServico] = useState<Servico | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -27,18 +28,28 @@ export function Servicos() {
   const API_URL = "https://studio-745a.onrender.com";
 
   async function carregarServicos() {
+    setIsLoading(true);
+
     try {
       const response = await fetch(`${API_URL}/servicos`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
         cache: "no-store",
       });
 
-      if (!response.ok) throw new Error("Erro no servidor");
+      if (!response.ok) {
+        throw new Error("Erro ao buscar serviços");
+      }
 
-      const data = await response.json();
-      setServicos(Array.isArray(data) ? data : []);
+      const data: Servico[] = await response.json();
+      setServicos(data ?? []);
     } catch (error) {
       console.error("Erro ao buscar serviços:", error);
       setServicos([]);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -65,12 +76,14 @@ export function Servicos() {
 
   const handleExcluirServico = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
+
     try {
       const response = await fetch(`${API_URL}/servicos/${id}`, {
         method: "DELETE",
       });
+
       if (response.ok) {
-        setServicos(prev => prev ? prev.filter(s => s.id !== id) : prev);
+        setServicos(prev => prev.filter(s => s.id !== id));
       } else {
         alert("Não é possível excluir um serviço que já possui agendamentos.");
       }
@@ -107,95 +120,157 @@ export function Servicos() {
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const servicoSalvo = await response.json();
-
-        if (editingServico) {
-          setServicos(prev =>
-            prev ? prev.map(s => s.id === servicoSalvo.id ? servicoSalvo : s) : prev
-          );
-        } else {
-          setServicos(prev => prev ? [...prev, servicoSalvo] : [servicoSalvo]);
-        }
-
-        setShowModal(false);
-      } else {
-        alert("Erro ao salvar serviço.");
+      if (!response.ok) {
+        throw new Error("Erro ao salvar serviço");
       }
+
+      const servicoSalvo: Servico = await response.json();
+
+      if (editingServico) {
+        setServicos(prev =>
+          prev.map(s => (s.id === servicoSalvo.id ? servicoSalvo : s))
+        );
+      } else {
+        setServicos(prev => [...prev, servicoSalvo]);
+      }
+
+      setShowModal(false);
     } catch (error) {
       console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar serviço.");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="p-8 relative min-h-screen">
+    <div className="p-8 min-h-screen">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Serviços
-          </h1>
+          <h1 className="text-4xl font-bold">Serviços</h1>
           <p className="text-gray-600 mt-2">Gerencie os serviços oferecidos</p>
         </div>
+
         <button
           onClick={handleNovoServico}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg hover:scale-105 transition-all"
+          className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl"
         >
           <Plus className="w-5 h-5" />
           Novo Serviço
         </button>
       </div>
 
-      {/* ⬇️ CONTROLE CORRETO DE RENDER */}
-      {servicos === null ? (
+      {isLoading === true ? (
         <div className="flex justify-center items-center h-64">
-          <p className="text-gray-500 text-lg animate-pulse">
+          <p className="text-gray-500 animate-pulse">
             Carregando serviços...
           </p>
         </div>
-      ) : servicos.length === 0 ? (
-        <div className="bg-white/80 rounded-2xl shadow-lg p-12 text-center border mt-6">
-          <p className="text-gray-500">
-            Nenhum serviço cadastrado. Clique em "Novo Serviço" para começar.
-          </p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {servicos.map(servico => (
-            <div
-              key={servico.id}
-              className="bg-white/80 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105 border"
-            >
-              <div className="p-6">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {servicos.map(servico => (
+              <div
+                key={servico.id}
+                className="bg-white rounded-xl shadow p-6"
+              >
                 <div className="flex justify-between mb-4">
-                  <h3 className="text-xl font-bold">{servico.nome}</h3>
-                  <div className="flex gap-1">
+                  <h3 className="font-bold text-lg">{servico.nome}</h3>
+                  <div className="flex gap-2">
                     <button onClick={() => handleEditarServico(servico)}>
-                      <Pencil className="w-4 h-4 text-purple-600" />
+                      <Pencil className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleExcluirServico(servico.id)}>
-                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <Trash2 className="w-4 h-4 text-red-500" />
                     </button>
                   </div>
                 </div>
 
-                {servico.descricao && (
-                  <p className="text-sm text-gray-600 mb-4">
-                    {servico.descricao}
-                  </p>
-                )}
+                <p className="text-sm text-gray-600 mb-2">
+                  {servico.descricao}
+                </p>
 
+                <p className="text-sm">
+                  ⏱ {servico.duracao} minutos
+                </p>
                 <p className="text-sm font-semibold">
-                  ⏱ {servico.duracao} min • 💰 R$ {servico.preco.toFixed(2)}
+                  💰 R$ {servico.preco.toFixed(2)}
                 </p>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {servicos.length === 0 && (
+            <p className="text-center text-gray-500 mt-8">
+              Nenhum serviço cadastrade
+            </p>
+          )}
+        </>
       )}
 
-      {/* modal permanece igual */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                placeholder="Nome"
+                value={formData.nome}
+                onChange={e =>
+                  setFormData({ ...formData, nome: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                placeholder="Duração"
+                type="number"
+                value={formData.duracao}
+                onChange={e =>
+                  setFormData({ ...formData, duracao: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <input
+                placeholder="Preço"
+                type="number"
+                value={formData.preco}
+                onChange={e =>
+                  setFormData({ ...formData, preco: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <textarea
+                placeholder="Descrição"
+                value={formData.descricao}
+                onChange={e =>
+                  setFormData({ ...formData, descricao: e.target.value })
+                }
+                className="w-full border p-2 rounded"
+              />
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 border rounded p-2"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 bg-purple-600 text-white rounded p-2"
+                >
+                  {isSaving ? "Salvando..." : "Salvar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
