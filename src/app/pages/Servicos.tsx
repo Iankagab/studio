@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Clock, DollarSign } from "lucide-react";
 
@@ -28,8 +30,6 @@ export function Servicos() {
   const API_URL = "https://studio-745a.onrender.com";
 
 async function carregarServicos() {
-  setIsLoading(true);
-
   try {
     const response = await fetch(`${API_URL}/servicos`, {
       cache: "no-store",
