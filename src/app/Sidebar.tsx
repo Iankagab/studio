@@ -11,8 +11,8 @@ export function Sidebar() {
 
   return (
     <>
-      {/* ===== MENU MOBILE (TOPO) ===== */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-purple-100 shadow-sm lg:hidden">
+      {/* ===== MENU MOBILE (FIXO NO TOPO) ===== */}
+      <header className="fixed top-0 left-0 right-0 z-[9999] bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-sm lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <h1 className="font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
             <Scissors className="w-5 h-5 text-purple-600" />
@@ -42,7 +42,7 @@ export function Sidebar() {
       </header>
 
       {/* ===== SIDEBAR DESKTOP ===== */}
-      <aside className="w-64 bg-white/80 backdrop-blur-md border-r border-purple-100 min-h-screen fixed left-0 top-0 z-40 shadow-xl hidden lg:block">
+      <aside className="hidden lg:block w-64 bg-white/80 backdrop-blur-md border-r border-purple-100 min-h-screen fixed left-0 top-0 z-40 shadow-xl">
         <div className="p-8">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
             <Scissors className="w-6 h-6 text-purple-600" />
@@ -57,7 +57,7 @@ export function Sidebar() {
               to={item.path}
               end={item.path === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive
                     ? "bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 font-semibold shadow-sm border border-purple-100"
                     : "text-gray-600 hover:bg-white hover:shadow-md hover:text-purple-600"

@@ -5,13 +5,13 @@ import { Agendamentos } from "./pages/Agendamentos";
 import { Servicos } from "./pages/Servicos";
 import { Clientes } from "./pages/Clientes";
 
-// ADICIONEI "default" AQUI PARA O main.tsx ACEITAR
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
-        <main className="flex-1 ml-0 lg:ml-64 bg-gray-50 min-h-screen">
+
+        <main className="flex-1 pt-[112px] lg:pt-0 lg:ml-64">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/agendamentos" element={<Agendamentos />} />
