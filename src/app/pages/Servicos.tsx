@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Clock, DollarSign } from "lucide-react";
 
