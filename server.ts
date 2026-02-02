@@ -127,25 +127,26 @@ app.get("/agendamentos", async (req, res) => {
       orderBy: { data: "asc" },
       include: { 
         servicos: true,
-        cliente: true // <--- NOVA LINHA: Traz os dados do dono do agendamento
+        cliente: true 
       }, 
     });
 
     const formatado = agendamentos.map((item) => {
-      const dataLocal = new Date(item.data);
-      const ano = dataLocal.getFullYear();
-      const mes = String(dataLocal.getMonth() + 1).padStart(2, '0');
-      const dia = String(dataLocal.getDate()).padStart(2, '0');
-      const dataString = `${ano}-${mes}-${dia}`;
+      // Usamos ISOString para garantir que o fuso horário não quebre a data
+      const dataISO = item.data.toISOString(); // Ex: 2024-02-01T14:00:00Z
+      const dataString = dataISO.split('T')[0];
+      const horaString = item.data.toLocaleTimeString("pt-BR", { 
+        hour: "2-digit", 
+        minute: "2-digit", 
+        timeZone: "America/Sao_Paulo" // Força o horário de Brasília
+      });
 
       return {
         id: item.id,
         clienteNome: item.clienteNome,
-        // Repassa o telefone se existir cliente vinculado
         clienteTelefone: item.cliente?.telefone || null, 
-        
         data: dataString,
-        hora: item.data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        hora: horaString,
         status: item.status,
         observacoes: item.observacoes || "",
         servicos: item.servicos.map((s) => ({
@@ -157,7 +158,7 @@ app.get("/agendamentos", async (req, res) => {
 
     res.json(formatado);
   } catch (error) {
-    console.error(error);
+    console.error("ERRO DETALHADO NO PRISMA:", error); // Isso vai aparecer nos Logs do Render
     res.status(500).json({ error: "Erro ao buscar agendamentos" });
   }
 });
@@ -288,9 +289,4 @@ app.put("/agendamentos/:id", async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Erro ao editar agendamento" });
   }
-});
-
-// O LISTEN TEM QUE SER A ÚLTIMA COISA DO ARQUIVO
-app.listen(3001, () => {
-  console.log("🚀 Servidor rodando em http://localhost:3001");
 });
